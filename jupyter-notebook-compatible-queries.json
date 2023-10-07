@@ -1,0 +1,340 @@
+{
+    "tweets": [
+        {
+            "Number of tweets each day": [
+                {
+                    "$group": {
+                        "_id": {
+                            "$dateToString": {
+                                "format": "%Y-%m-%d",
+                                "date": "$createdTime"
+                            }
+                        },
+                        "tweet_count": {
+                            "$sum": 1
+                        }
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 0,
+                        "tweeted_date": "$_id",
+                        "tweet_count": 1
+                    }
+                },
+                {
+                    "$sort": {
+                        "tweeted_date": 1
+                    }
+                }
+            ]
+        },
+        {
+            "Most - Active users": [
+                {
+                    "$group": {
+                        "_id": "$username",
+                        "tweet_count": {
+                            "$sum": 1
+                        }
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 0,
+                        "active_user": "$_id",
+                        "tweet_count": 1
+                    }
+                },
+                {
+                    "$sort": {
+                        "tweet_count": -1
+                    }
+                },
+                {
+                    "$limit": 10
+                }
+            ]
+        },
+        {
+            "Most Used Source": [
+                {
+                    "$group": {
+                        "_id": "$Used_source",
+                        "count": {
+                            "$sum": 1
+                        }
+                    }
+                },
+                {
+                    "$sort": {
+                        "count": -1
+                    }
+                },
+                {
+                    "$limit": 10
+                }
+            ]
+        },
+        {
+            "Most used Language": [
+                {
+                    "$group": {
+                        "_id": "$lang",
+                        "totalNumberOfTweets": {
+                            "$sum": 1
+                        }
+                    }
+                },
+                {
+                    "$sort": {
+                        "totalNumberOfTweets": -1
+                    }
+                },
+                {
+                    "$limit": 10
+                }
+            ]
+        },
+        {
+            "Most liked tweet about chatgpt": [
+                { 
+      	            "$match": { 
+         	            "tweetText": {
+                            "$regex": "chatgpt",
+                            "$options":"i"
+                        }
+                    }
+   	            },
+                {
+                    "$sort": {
+                        "likeCount": -1
+                    }
+                },
+                {
+                    "$limit": 1
+                }
+            ]
+        },
+        {
+            "Top 10 users who have tweeted the most about #chatgpt.": [
+                { 
+      	            "$match": { 
+         	            "tweetText": {
+                            "$regex": "#chatgpt",
+                            "$options":"i"
+                        }
+                    }
+   	            },
+                {
+                    "$group": {
+                        "_id": "$username",
+                        "count": {
+                            "$sum": 1
+                        }
+                    }
+                },
+                {
+                    "$sort": {
+                        "count": -1
+                    }
+                },
+                {
+                    "$limit": 10
+                }
+            ]
+        },
+        {
+            "Top 10 users who have the highest number of retweets in their tweets containing #chatgpt": [
+                { 
+      	            "$match": { 
+         	            "tweetText": {
+                            "$regex": "#chatgpt",
+                            "$options":"i"
+                        }
+                    }
+   	            },
+                {
+                    "$group": {
+                        "_id": "$username",
+                        "totalRetweets": {
+                            "$sum": "$retweetCount"
+                        }
+                    }
+                },
+                {
+                    "$sort": {
+                        "totalRetweets": -1
+                    }
+                },
+                {
+                    "$limit": 10
+                }
+            ]
+        },
+        {
+            "Most Viral tweet": [
+                { 
+      	            "$match": { 
+         	            "tweetText": {
+                            "$regex": "chatgpt",
+                            "$options":"i"
+                        }
+                    }
+   	            },
+                {
+                    "$addFields": {
+                        "viral_count": {
+                            "$add": [
+                                "$replyCount",
+                                "$retweetCount",
+                                "$likeCount",
+                                "$quoteCount"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "$sort": {
+                        "viral_count": -1
+                    }
+                },
+                {
+                    "$limit": 1
+                }
+            ]
+        },
+        {
+            "most commonly used words in tweets about chatgpt": [
+                { 
+      	            "$match": { 
+         	            "tweetText": {
+                            "$regex": "chatgpt",
+                            "$options":"i"
+                        }
+                    }
+   	            },
+                {
+                    "$project": {
+                        "words": {
+                            "$split": [
+                                "$tweetText",
+                                " "
+                            ]
+                        }
+                    }
+                },
+                {
+                    "$unwind": "$words"
+                },
+                {
+                    "$group": {
+                        "_id": "$words",
+                        "count": {
+                            "$sum": 1
+                        }
+                    }
+                },
+                {
+                    "$sort": {
+                        "count": -1
+                    }
+                },
+                {
+                    "$limit": 10
+                }
+            ]
+        },
+        {
+            "Most Discussed tweet  with respect to replies based on conversation id": [
+                {
+                    "$match": {
+                        "conversationId": {
+                            "$ne": null
+                        }
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": "$conversationId",
+                        "count": {
+                            "$sum": "$replyCount"
+                        }
+                    }
+                },
+                {
+                    "$sort": {
+                        "count": -1
+                    }
+                },
+                {
+                    "$limit": 1
+                }
+            ]
+        },
+        {
+            "users who have been mentioned the most in the tweets.": [
+                {
+                    "$group": {
+                        "_id": "$username",
+                        "count": {
+                            "$sum": 1
+                        }
+                    }
+                },
+                {
+                    "$sort": {
+                        "count": -1
+                    }
+                },
+                {
+                    "$limit": 10
+                }
+            ]
+        }
+    ],
+    "hashtags": [
+        {
+            "Most used Hashtags": [
+                {
+                    "$group": {
+                        "_id": "$hashtag",
+                        "hashtag_count": {
+                            "$sum": 1
+                        }
+                    }
+                },
+                {
+                    "$sort": {
+                        "hashtag_count": -1
+                    }
+                },
+                {
+                    "$limit": 10
+                }
+            ]
+        }
+    ],
+    "media": [
+        {
+            "Most Used Media": [
+                {
+                    "$group": {
+                        "_id": "$mediaType",
+                        "NumberOfTimesUsed": {
+                            "$sum": 1
+                        }
+                    }
+                },
+                {
+                    "$sort": {
+                        "NumberOfTimesUsed": -1
+                    }
+                },
+                {
+                    "$limit": 10
+                }
+            ]
+        }
+    ]
+}
